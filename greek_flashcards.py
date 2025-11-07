@@ -34,56 +34,59 @@ if 'font_size' not in st.session_state:
 if 'excluded_words' not in st.session_state:
     st.session_state.excluded_words = set()
 
-# CSS для карточек
-st.markdown(f"""
-<style>
-    .flashcard {{
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        border-radius: 20px;
-        padding: 60px 40px;
-        margin: 30px auto;
-        box-shadow: 0 10px 40px rgba(0,0,0,0.3);
-        text-align: center;
-        min-height: 250px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        transition: transform 0.3s ease;
-    }}
-    .flashcard:hover {{
-        transform: translateY(-5px);
-    }}
-    .flashcard-text {{
-        color: white;
-        font-size: {st.session_state.font_size}em;
-        font-weight: bold;
-        margin: 0;
-        text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
-    }}
-    .flashcard-example {{
-        color: rgba(255,255,255,0.9);
-        font-size: {st.session_state.font_size * 0.48}em;
-        margin-top: 20px;
-        font-style: italic;
-    }}
-    .stats-box {{
-        background: #f0f2f6;
-        border-radius: 10px;
-        padding: 20px;
-        margin: 10px 0;
-    }}
-    .big-button {{
-        font-size: {st.session_state.font_size * 0.48}em !important;
-        padding: 15px 30px !important;
-        border-radius: 10px !important;
-        font-weight: bold !important;
-    }}
-    .stButton > button {{
-        font-size: {st.session_state.font_size * 0.4}em !important;
-    }}
-</style>
-""", unsafe_allow_html=True)
+# CSS будет добавлен после настроек
+
+def apply_custom_css():
+    """Применение пользовательских стилей с текущим размером шрифта"""
+    st.markdown(f"""
+    <style>
+        .flashcard {{
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 20px;
+            padding: 60px 40px;
+            margin: 30px auto;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            text-align: center;
+            min-height: 250px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }}
+        .flashcard:hover {{
+            transform: translateY(-5px);
+        }}
+        .flashcard-text {{
+            color: white;
+            font-size: {st.session_state.font_size}em;
+            font-weight: bold;
+            margin: 0;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }}
+        .flashcard-example {{
+            color: rgba(255,255,255,0.9);
+            font-size: {st.session_state.font_size * 0.48}em;
+            margin-top: 20px;
+            font-style: italic;
+        }}
+        .stats-box {{
+            background: #f0f2f6;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 10px 0;
+        }}
+        .big-button {{
+            font-size: {st.session_state.font_size * 0.48}em !important;
+            padding: 15px 30px !important;
+            border-radius: 10px !important;
+            font-weight: bold !important;
+        }}
+        .stButton > button {{
+            font-size: {st.session_state.font_size * 0.4}em !important;
+        }}
+    </style>
+    """, unsafe_allow_html=True)
 
 def load_vocabulary_from_file(file_path):
     """Загрузка словаря из JSON файла"""
@@ -307,7 +310,9 @@ with st.sidebar:
     )
     if font_size != st.session_state.font_size:
         st.session_state.font_size = font_size
-        st.rerun()
+
+# Применяем CSS с обновленным размером шрифта
+apply_custom_css()
 
 # Основная область
 if not st.session_state.active_files:
