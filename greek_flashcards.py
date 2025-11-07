@@ -54,7 +54,7 @@ st.markdown("""
     }
     .flashcard-text {
         color: white;
-        font-size: 30px;
+        font-size: 3em;
         font-weight: bold;
         margin: 0;
         text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
@@ -62,7 +62,7 @@ st.markdown("""
     }
     .flashcard-example {
         color: rgba(255,255,255,0.9);
-        font-size: 30px;
+        font-size: 3em;
         margin-top: 20px;
         font-style: italic;
     }
