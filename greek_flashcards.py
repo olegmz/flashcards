@@ -54,7 +54,7 @@ st.markdown("""
     }
     .flashcard-text {
         color: white;
-        font-size: 4.5em;
+        font-size: 20px;
         font-weight: bold;
         margin: 0;
         text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
