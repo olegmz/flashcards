@@ -27,11 +27,17 @@ if 'direction' not in st.session_state:
 if 'uploaded_files_dir' not in st.session_state:
     st.session_state.uploaded_files_dir = Path.home() / '.greek_flashcards'
     st.session_state.uploaded_files_dir.mkdir(exist_ok=True)
+if 'excluded_words' not in st.session_state:
+    st.session_state.excluded_words = set()
+if 'font_size' not in st.session_state:
+    st.session_state.font_size = 2.5
+if 'excluded_words' not in st.session_state:
+    st.session_state.excluded_words = set()
 
 # CSS для карточек
-st.markdown("""
+st.markdown(f"""
 <style>
-    .flashcard {
+    .flashcard {{
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         border-radius: 20px;
         padding: 60px 40px;
@@ -44,35 +50,38 @@ st.markdown("""
         justify-content: center;
         cursor: pointer;
         transition: transform 0.3s ease;
-    }
-    .flashcard:hover {
+    }}
+    .flashcard:hover {{
         transform: translateY(-5px);
-    }
-    .flashcard-text {
+    }}
+    .flashcard-text {{
         color: white;
-        font-size: 2.5em;
+        font-size: {st.session_state.font_size}em;
         font-weight: bold;
         margin: 0;
         text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
-    }
-    .flashcard-example {
+    }}
+    .flashcard-example {{
         color: rgba(255,255,255,0.9);
-        font-size: 1.2em;
+        font-size: {st.session_state.font_size * 0.48}em;
         margin-top: 20px;
         font-style: italic;
-    }
-    .stats-box {
+    }}
+    .stats-box {{
         background: #f0f2f6;
         border-radius: 10px;
         padding: 20px;
         margin: 10px 0;
-    }
-    .big-button {
-        font-size: 1.2em !important;
+    }}
+    .big-button {{
+        font-size: {st.session_state.font_size * 0.48}em !important;
         padding: 15px 30px !important;
         border-radius: 10px !important;
         font-weight: bold !important;
-    }
+    }}
+    .stButton > button {{
+        font-size: {st.session_state.font_size * 0.4}em !important;
+    }}
 </style>
 """, unsafe_allow_html=True)
 
@@ -111,14 +120,19 @@ def get_next_card():
     weighted_words = []
     for word in all_words:
         word_key = word['greek']
+        
+        # Пропускаем исключенные слова
+        if word_key in st.session_state.excluded_words:
+            continue
+        
         correct_count = st.session_state.progress.get(word_key, {}).get('correct_streak', 0)
         
-        # Пропускаем выученные слова (5+ правильных ответов)
-        if correct_count >= 5:
+        # Пропускаем выученные слова (3+ правильных ответов)
+        if correct_count >= 3:
             continue
             
         # Чем меньше правильных ответов, тем больше вес (больше вероятность показа)
-        weight = max(1, 6 - correct_count)
+        weight = max(1, 4 - correct_count)
         weighted_words.extend([word] * weight)
     
     if not weighted_words:
@@ -145,7 +159,7 @@ def mark_answer(is_correct):
     
     if is_correct:
         st.session_state.progress[word_key]['correct_streak'] += 1
-        if st.session_state.progress[word_key]['correct_streak'] >= 5:
+        if st.session_state.progress[word_key]['correct_streak'] >= 3:
             st.session_state.progress[word_key]['learned'] = True
     else:
         st.session_state.progress[word_key]['correct_streak'] = 0
@@ -160,17 +174,24 @@ def get_statistics():
     total_words = len(all_words)
     
     if total_words == 0:
-        return {'total': 0, 'learned': 0, 'in_progress': 0, 'not_started': 0}
+        return {'total': 0, 'learned': 0, 'in_progress': 0, 'not_started': 0, 'excluded': 0}
     
     learned = 0
     in_progress = 0
     not_started = 0
+    excluded = 0
     
     for word in all_words:
         word_key = word['greek']
+        
+        # Подсчитываем исключенные слова
+        if word_key in st.session_state.excluded_words:
+            excluded += 1
+            continue
+        
         if word_key in st.session_state.progress:
             correct_streak = st.session_state.progress[word_key]['correct_streak']
-            if correct_streak >= 5:
+            if correct_streak >= 3:
                 learned += 1
             elif correct_streak > 0:
                 in_progress += 1
@@ -183,8 +204,21 @@ def get_statistics():
         'total': total_words,
         'learned': learned,
         'in_progress': in_progress,
-        'not_started': not_started
+        'not_started': not_started,
+        'excluded': excluded
     }
+
+def exclude_word():
+    """Исключить текущее слово из сессии"""
+    if st.session_state.current_card is None:
+        return
+    
+    word_key = st.session_state.current_card['greek']
+    st.session_state.excluded_words.add(word_key)
+    
+    # Сброс для следующей карточки
+    st.session_state.current_card = None
+    st.session_state.show_answer = False
 
 # Интерфейс приложения
 st.title("🇬🇷 Учим греческий язык")
@@ -260,6 +294,20 @@ with st.sidebar:
         key='direction_radio'
     )
     st.session_state.direction = direction
+    
+    st.markdown("**Размер шрифта:**")
+    font_size = st.slider(
+        "Размер шрифта карточек",
+        min_value=1.5,
+        max_value=4.0,
+        value=st.session_state.font_size,
+        step=0.1,
+        key='font_slider',
+        label_visibility="collapsed"
+    )
+    if font_size != st.session_state.font_size:
+        st.session_state.font_size = font_size
+        st.rerun()
 
 # Основная область
 if not st.session_state.active_files:
@@ -268,7 +316,7 @@ else:
     # Статистика
     stats = get_statistics()
     
-    col1, col2, col3, col4 = st.columns(4)
+    col1, col2, col3, col4, col5 = st.columns(5)
     with col1:
         st.metric("Всего слов", stats['total'])
     with col2:
@@ -277,6 +325,8 @@ else:
         st.metric("В процессе", stats['in_progress'])
     with col4:
         st.metric("Новые", stats['not_started'])
+    with col5:
+        st.metric("Исключено", stats['excluded'])
     
     st.divider()
     
@@ -304,7 +354,7 @@ else:
         word_key = card['greek']
         correct_streak = st.session_state.progress.get(word_key, {}).get('correct_streak', 0)
         
-        st.markdown(f"### Прогресс: {'✅' * correct_streak}{'⬜' * (5 - correct_streak)}")
+        st.markdown(f"### Прогресс: {'✅' * correct_streak}{'⬜' * (3 - correct_streak)}")
         
         # Карточка
         if not st.session_state.show_answer:
@@ -343,11 +393,28 @@ else:
                 if st.button("❌ Не знаю", use_container_width=True):
                     mark_answer(False)
                     st.rerun()
+            
+            st.markdown("")
+            if st.button("🚫 Убрать слово из сессии", use_container_width=True, help="Слово не будет показываться в текущей сессии"):
+                st.session_state.excluded_words.add(word_key)
+                st.session_state.current_card = None
+                st.session_state.show_answer = False
+                st.rerun()
 
-# Кнопка сброса прогресса внизу
+# Кнопки сброса внизу
 st.divider()
-if st.button("🔄 Сбросить весь прогресс"):
-    st.session_state.progress = {}
-    st.session_state.current_card = None
-    st.success("Прогресс сброшен!")
-    st.rerun()
+col1, col2 = st.columns(2)
+
+with col1:
+    if st.button("🔄 Сбросить весь прогресс"):
+        st.session_state.progress = {}
+        st.session_state.current_card = None
+        st.success("Прогресс сброшен!")
+        st.rerun()
+
+with col2:
+    if st.button("↩️ Вернуть исключенные слова"):
+        st.session_state.excluded_words = set()
+        st.session_state.current_card = None
+        st.success("Исключенные слова возвращены!")
+        st.rerun()
