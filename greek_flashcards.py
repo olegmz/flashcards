@@ -6,7 +6,7 @@ import os
 
 # Настройка страницы
 st.set_page_config(
-    page_title="Учим греческий язык",
+    page_title="Flash Cards",
     page_icon="🇬🇷",
     layout="wide"
 )
