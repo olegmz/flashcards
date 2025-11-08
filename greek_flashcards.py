@@ -6,7 +6,7 @@ import os
 
 # Настройка страницы
 st.set_page_config(
-    page_title="Flash Cards",
+    page_title="Учим греческий язык",
     page_icon="🇬🇷",
     layout="wide"
 )
@@ -29,55 +29,62 @@ if 'uploaded_files_dir' not in st.session_state:
     st.session_state.uploaded_files_dir.mkdir(exist_ok=True)
 if 'excluded_words' not in st.session_state:
     st.session_state.excluded_words = set()
+if 'font_size' not in st.session_state:
+    st.session_state.font_size = 3.0
 if 'excluded_words' not in st.session_state:
     st.session_state.excluded_words = set()
 
-# CSS для карточек с увеличенным шрифтом
-st.markdown("""
-<style>
-    .flashcard {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        border-radius: 20px;
-        padding: 60px 40px;
-        margin: 30px auto;
-        box-shadow: 0 10px 40px rgba(0,0,0,0.3);
-        text-align: center;
-        min-height: 250px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        transition: transform 0.3s ease;
-    }
-    .flashcard:hover {
-        transform: translateY(-5px);
-    }
-    .flashcard-text {
-        color: white;
-        font-size: 3em;
-        font-weight: bold;
-        margin: 0;
-        text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
-        line-height: 1.2;
-    }
-    .flashcard-example {
-        color: rgba(255,255,255,0.9);
-        font-size: 3em;
-        margin-top: 20px;
-        font-style: italic;
-    }
-    .stats-box {
-        background: #f0f2f6;
-        border-radius: 10px;
-        padding: 20px;
-        margin: 10px 0;
-    }
-    .stButton > button {
-        font-size: 1.3em !important;
-        padding: 12px 24px !important;
-    }
-</style>
-""", unsafe_allow_html=True)
+def apply_custom_css():
+    """Применение пользовательских стилей с текущим размером шрифта"""
+    st.markdown(f"""
+    <style>
+        .flashcard {{
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 20px;
+            padding: 60px 40px;
+            margin: 30px auto;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            text-align: center;
+            min-height: 250px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }}
+        .flashcard:hover {{
+            transform: translateY(-5px);
+        }}
+        .flashcard-text {{
+            color: white;
+            font-size: {st.session_state.font_size}em;
+            font-weight: bold;
+            margin: 0;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }}
+        .flashcard-example {{
+            color: rgba(255,255,255,0.9);
+            font-size: {st.session_state.font_size * 0.48}em;
+            margin-top: 20px;
+            font-style: italic;
+        }}
+        .stats-box {{
+            background: #f0f2f6;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 10px 0;
+        }}
+        .big-button {{
+            font-size: {st.session_state.font_size * 0.48}em !important;
+            padding: 15px 30px !important;
+            border-radius: 10px !important;
+            font-weight: bold !important;
+        }}
+        .stButton > button {{
+            font-size: {st.session_state.font_size * 0.4}em !important;
+        }}
+    </style>
+    """, unsafe_allow_html=True)
 
 def load_vocabulary_from_file(file_path):
     """Загрузка словаря из JSON файла"""
@@ -288,6 +295,26 @@ with st.sidebar:
         key='direction_radio'
     )
     st.session_state.direction = direction
+    
+    st.markdown("**Размер шрифта:**")
+    font_size = st.slider(
+        "Размер шрифта карточек",
+        min_value=1.5,
+        max_value=5.0,
+        value=st.session_state.font_size,
+        step=0.1,
+        key='font_slider',
+        label_visibility="collapsed"
+    )
+    if font_size != st.session_state.font_size:
+        st.session_state.font_size = font_size
+        st.rerun()
+
+# Применяем CSS с обновленным размером шрифта
+apply_custom_css()
+
+# Для отладки: показываем текущий размер шрифта
+st.sidebar.markdown(f"**Текущий размер (отладка):** `{st.session_state.font_size}`")
 
 # Основная область
 if not st.session_state.active_files:
@@ -340,8 +367,8 @@ else:
         if not st.session_state.show_answer:
             st.markdown(f"""
             <div class="flashcard" onclick="this.style.transform='rotateY(180deg)'">
-                <div>
-                    <p class="flashcard-text">{question}</p>
+                <div style="width: 100%;">
+                    <p class="flashcard-text" style="font-size: {st.session_state.font_size}em;">{question}</p>
                 </div>
             </div>
             """, unsafe_allow_html=True)
@@ -354,9 +381,9 @@ else:
         else:
             st.markdown(f"""
             <div class="flashcard">
-                <div>
-                    <p class="flashcard-text">{answer}</p>
-                    <p class="flashcard-example">{card.get('example', '')}</p>
+                <div style="width: 100%;">
+                    <p class="flashcard-text" style="font-size: {st.session_state.font_size}em;">{answer}</p>
+                    <p class="flashcard-example" style="font-size: {st.session_state.font_size * 0.5}em; margin-top: 20px;">{card.get('example', '')}</p>
                 </div>
             </div>
             """, unsafe_allow_html=True)
