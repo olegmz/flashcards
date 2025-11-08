@@ -30,61 +30,7 @@ if 'uploaded_files_dir' not in st.session_state:
 if 'excluded_words' not in st.session_state:
     st.session_state.excluded_words = set()
 if 'font_size' not in st.session_state:
-    st.session_state.font_size = 3.0
-if 'excluded_words' not in st.session_state:
-    st.session_state.excluded_words = set()
-
-def apply_custom_css():
-    """Применение пользовательских стилей с текущим размером шрифта"""
-    st.markdown(f"""
-    <style>
-        .flashcard {{
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border-radius: 20px;
-            padding: 60px 40px;
-            margin: 30px auto;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
-            text-align: center;
-            min-height: 250px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: transform 0.3s ease;
-        }}
-        .flashcard:hover {{
-            transform: translateY(-5px);
-        }}
-        .flashcard-text {{
-            color: white;
-            font-size: {st.session_state.font_size}em;
-            font-weight: bold;
-            margin: 0;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
-        }}
-        .flashcard-example {{
-            color: rgba(255,255,255,0.9);
-            font-size: {st.session_state.font_size * 0.48}em;
-            margin-top: 20px;
-            font-style: italic;
-        }}
-        .stats-box {{
-            background: #f0f2f6;
-            border-radius: 10px;
-            padding: 20px;
-            margin: 10px 0;
-        }}
-        .big-button {{
-            font-size: {st.session_state.font_size * 0.48}em !important;
-            padding: 15px 30px !important;
-            border-radius: 10px !important;
-            font-weight: bold !important;
-        }}
-        .stButton > button {{
-            font-size: {st.session_state.font_size * 0.4}em !important;
-        }}
-    </style>
-    """, unsafe_allow_html=True)
+    st.session_state.font_size = 3.4
 
 def load_vocabulary_from_file(file_path):
     """Загрузка словаря из JSON файла"""
@@ -296,25 +242,42 @@ with st.sidebar:
     )
     st.session_state.direction = direction
     
-    st.markdown("**Размер шрифта:**")
-    font_size = st.slider(
-        "Размер шрифта карточек",
-        min_value=1.5,
-        max_value=5.0,
-        value=st.session_state.font_size,
-        step=0.1,
-        key='font_slider',
-        label_visibility="collapsed"
-    )
-    if font_size != st.session_state.font_size:
-        st.session_state.font_size = font_size
-        st.rerun()
-
-# Применяем CSS с обновленным размером шрифта
-apply_custom_css()
-
-# Для отладки: показываем текущий размер шрифта
-st.sidebar.markdown(f"**Текущий размер (отладка):** `{st.session_state.font_size}`")
+st.markdown("""
+    <style>
+        .flashcard {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 20px;
+            padding: 60px 40px;
+            margin: 30px auto;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            text-align: center;
+            min-height: 250px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+            perspective: 1000px;
+        }
+        .flashcard:hover {
+            transform: translateY(-5px);
+        }
+        .flashcard-text {
+            color: white;
+            font-weight: bold;
+            margin: 0;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        .flashcard-example {
+            color: rgba(255,255,255,0.9);
+            font-style: italic;
+        }
+        .stButton > button {
+            font-size: 1.2em !important;
+            padding: 10px 20px !important;
+        }
+    </style>
+    """, unsafe_allow_html=True)
 
 # Основная область
 if not st.session_state.active_files:
@@ -366,18 +329,16 @@ else:
         # Карточка
         if not st.session_state.show_answer:
             st.markdown(f"""
-            <div class="flashcard" onclick="this.style.transform='rotateY(180deg)'">
+            <div class="flashcard" onclick="document.getElementById('show_answer_button').click()">
                 <div style="width: 100%;">
                     <p class="flashcard-text" style="font-size: {st.session_state.font_size}em;">{question}</p>
                 </div>
             </div>
             """, unsafe_allow_html=True)
             
-            col1, col2, col3 = st.columns([1, 2, 1])
-            with col2:
-                if st.button("👁️ Показать ответ", use_container_width=True, type="primary"):
-                    st.session_state.show_answer = True
-                    st.rerun()
+            # Скрытая кнопка для программного нажатия
+            st.button("Показать ответ", on_click=lambda: st.session_state.update(show_answer=True), key="show_answer_button", help="Скрытая кнопка")
+
         else:
             st.markdown(f"""
             <div class="flashcard">
