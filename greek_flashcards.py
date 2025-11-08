@@ -29,6 +29,8 @@ if 'uploaded_files_dir' not in st.session_state:
     st.session_state.uploaded_files_dir.mkdir(exist_ok=True)
 if 'excluded_words' not in st.session_state:
     st.session_state.excluded_words = set()
+if 'shown_in_sequence' not in st.session_state:
+    st.session_state.shown_in_sequence = set()
 if 'font_size' not in st.session_state:
     st.session_state.font_size = 3.4
 
@@ -63,6 +65,26 @@ def get_next_card():
     if not all_words:
         return None
     
+    # --- 1. Последовательный проход ---
+    # Ищем первое слово, которое еще не было показано в этой сессии
+    for word in all_words:
+        word_key = word['greek']
+
+        # Пропускаем исключенные или уже выученные слова
+        if word_key in st.session_state.excluded_words:
+            continue
+        correct_count = st.session_state.progress.get(word_key, {}).get('correct_streak', 0)
+        if correct_count >= 3:
+            continue
+        
+        # Если слово еще не было показано в последовательном проходе, выбираем его
+        if word_key not in st.session_state.shown_in_sequence:
+            st.session_state.shown_in_sequence.add(word_key)
+            return word
+
+    # --- 2. Взвешенный случайный выбор (после первого прохода) ---
+    # Если мы здесь, значит все слова были показаны хотя бы раз.
+    # Теперь используем взвешенный выбор для повторения.
     # Создаем список слов с приоритетом (чем меньше правильных ответов, тем выше приоритет)
     weighted_words = []
     for word in all_words:
@@ -226,6 +248,10 @@ with st.sidebar:
             if is_active:
                 st.session_state.active_files.add(file_name)
             else:
+                # При отключении словаря, сбрасываем счетчик последовательного показа
+                # чтобы при следующем включении начать с начала
+                if file_name in st.session_state.active_files:
+                    st.session_state.shown_in_sequence = set()
                 st.session_state.active_files.discard(file_name)
     else:
         st.info("Загрузите JSON файлы со словами")
@@ -377,6 +403,7 @@ with col1:
     if st.button("🔄 Сбросить весь прогресс"):
         st.session_state.progress = {}
         st.session_state.current_card = None
+        st.session_state.shown_in_sequence = set()
         st.success("Прогресс сброшен!")
         st.rerun()
 
@@ -384,5 +411,6 @@ with col2:
     if st.button("↩️ Вернуть исключенные слова"):
         st.session_state.excluded_words = set()
         st.session_state.current_card = None
+        st.session_state.shown_in_sequence = set()
         st.success("Исключенные слова возвращены!")
         st.rerun()
