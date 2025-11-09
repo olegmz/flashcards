@@ -268,9 +268,9 @@ with st.sidebar:
     )
     st.session_state.direction = direction
     
-st.markdown("""
+st.markdown(f"""
     <style>
-        .flashcard {
+        .flashcard {{
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             border-radius: 20px;
             padding: 60px 40px;
@@ -281,27 +281,25 @@ st.markdown("""
             display: flex;
             align-items: center;
             justify-content: center;
-            cursor: pointer;
             transition: transform 0.3s ease;
-            perspective: 1000px;
-        }
-        .flashcard:hover {
+        }}
+        .flashcard:hover {{
             transform: translateY(-5px);
-        }
-        .flashcard-text {
+        }}
+        .flashcard-text {{
             color: white;
             font-weight: bold;
             margin: 0;
             text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
-        }
-        .flashcard-example {
+        }}
+        .flashcard-example {{
             color: rgba(255,255,255,0.9);
             font-style: italic;
-        }
-        .stButton > button {
+        }}
+        .stButton > button {{
             font-size: 1.2em !important;
             padding: 10px 20px !important;
-        }
+        }}
     </style>
     """, unsafe_allow_html=True)
 
@@ -334,6 +332,7 @@ else:
         st.success("🎉 Поздравляю! Вы выучили все слова!")
         if st.button("🔄 Начать заново", use_container_width=True):
             st.session_state.progress = {}
+            st.session_state.shown_in_sequence = set()
             st.rerun()
     else:
         card = st.session_state.current_card
@@ -355,16 +354,16 @@ else:
         # Карточка
         if not st.session_state.show_answer:
             st.markdown(f"""
-            <div class="flashcard" onclick="document.getElementById('show_answer_button').click()">
+            <div class="flashcard">
                 <div style="width: 100%;">
                     <p class="flashcard-text" style="font-size: {st.session_state.font_size}em;">{question}</p>
                 </div>
             </div>
             """, unsafe_allow_html=True)
             
-            # Скрытая кнопка для программного нажатия
-            st.button("Показать ответ", on_click=lambda: st.session_state.update(show_answer=True), key="show_answer_button", help="Скрытая кнопка")
-
+            if st.button("👁️ Показать ответ", use_container_width=True, type="primary"):
+                st.session_state.show_answer = True
+                st.rerun()
         else:
             st.markdown(f"""
             <div class="flashcard">
@@ -374,7 +373,11 @@ else:
                 </div>
             </div>
             """, unsafe_allow_html=True)
-            
+
+            if st.button("Скрыть ответ", use_container_width=True):
+                st.session_state.show_answer = False
+                st.rerun()
+
             st.markdown("### Вы знаете это слово?")
             col1, col2 = st.columns(2)
             
@@ -412,5 +415,5 @@ with col2:
         st.session_state.excluded_words = set()
         st.session_state.current_card = None
         st.session_state.shown_in_sequence = set()
-        st.success("Исключенные слова возвращены!")
+        st.success("Исключенные слова возвращены!")     
         st.rerun()
